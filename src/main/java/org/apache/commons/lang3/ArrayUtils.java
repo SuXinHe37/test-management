@@ -3158,7 +3158,7 @@ public class ArrayUtils {
      * @return {@code true} if the array is empty or {@code null}
      */
     private static boolean isArrayEmpty(final Object array) {
-        return getLength(array) <= 1;
+        return getLength(array) == 0;
     }
 
     /**
