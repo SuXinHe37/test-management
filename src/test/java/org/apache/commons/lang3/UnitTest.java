@@ -1,130 +1,130 @@
-import org.apache.commons.lang3.ArrayUtils;
+package org.apache.commons.lang3;
 
-public class UnitTest {
-    private static int totalTests = 0;
-    private static int passedTests = 0;
-    private static int failedTests = 0;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-    public static void main(String[] args) {
-        System.out.println("========== 手动测试 ArrayUtils ==========\n");
+import static org.junit.jupiter.api.Assertions.*;
 
-        testIsEmpty();
-        testIsNotEmpty();
-        testContains();
+@DisplayName("ArrayUtils 单元测试")
+public class ArrayUtilsTest {
 
-        printSummary();
+    @BeforeAll
+    static void setUpAll() {
+        System.out.println("开始执行 ArrayUtils 测试套件");
     }
 
-    /**
-     * 测试 isEmpty 方法（注入缺陷的方法）
-     */
-    private static void testIsEmpty() {
-        System.out.println("--- 测试 ArrayUtils.isEmpty ---");
-
-        // 测试用例1: null
-        boolean r1 = ArrayUtils.isEmpty((boolean[]) null);
-        assertTest("isEmpty(null)", true, r1);
-
-        // 测试用例2: 空数组
-        String[] emptyArr = new String[]{};
-        boolean r2 = ArrayUtils.isEmpty(emptyArr);
-        assertTest("isEmpty(空数组)", true, r2);
-
-        // 测试用例3: 长度为1的数组（会触发缺陷）
-        String[] singleArr = new String[]{"A"};
-        boolean r3 = ArrayUtils.isEmpty(singleArr);
-        assertTest("isEmpty(长度为1的数组)", false, r3);  // 期望false，实际会返回true
-
-        // 测试用例4: 长度为2的数组
-        String[] twoArr = new String[]{"A", "B"};
-        boolean r4 = ArrayUtils.isEmpty(twoArr);
-        assertTest("isEmpty(长度为2的数组)", false, r4);
-
-        System.out.println();
+    @AfterAll
+    static void tearDownAll() {
+        System.out.println("ArrayUtils 测试套件执行完毕");
     }
 
-    /**
-     * 测试 isNotEmpty 方法（依赖isEmpty）
-     */
-    private static void testIsNotEmpty() {
-        System.out.println("--- 测试 ArrayUtils.isNotEmpty ---");
+    // ========== isEmpty 方法测试 ==========
 
-        boolean r1 = ArrayUtils.isNotEmpty((boolean[]) null);
-        assertTest("isNotEmpty(null)", false, r1);
+    @Test
+    @DisplayName("测试 isEmpty - 边界值测试")
+    void testIsEmptyBoundary() {
+        // 这些应该通过
+        assertTrue(ArrayUtils.isEmpty((Object[]) null), "null应该返回true");
+        assertTrue(ArrayUtils.isEmpty(new String[]{}), "空数组应该返回true");
+        assertFalse(ArrayUtils.isEmpty(new String[]{"A", "B"}), "长度>=2的数组应该返回false");
 
-        boolean r2 = ArrayUtils.isNotEmpty(new String[]{});
-        assertTest("isNotEmpty(空数组)", false, r2);
-
-        // 由于依赖isEmpty，这个测试也会失败
-        boolean r3 = ArrayUtils.isNotEmpty(new String[]{"A"});
-        assertTest("isNotEmpty(长度为1的数组)", true, r3);
-
-        boolean r4 = ArrayUtils.isNotEmpty(new String[]{"A", "B"});
-        assertTest("isNotEmpty(长度为2的数组)", true, r4);
-
-        System.out.println();
+        // 这个断言会失败，因为注入的缺陷让长度为1的数组返回true
+        assertFalse(ArrayUtils.isEmpty(new String[]{"A"}), "长度为1的数组应该返回false（缺陷）");
     }
 
-    /**
-     * 测试 contains 方法（正常方法，用于对比）
-     */
-    private static void testContains() {
-        System.out.println("--- 测试 ArrayUtils.contains ---");
-
-        String[] arr = {"apple", "banana", "orange"};
-
-        boolean r1 = ArrayUtils.contains(arr, "banana");
-        assertTest("contains(存在)", true, r1);
-
-        boolean r2 = ArrayUtils.contains(arr, "grape");
-        assertTest("contains(不存在)", false, r2);
-
-        boolean r3 = ArrayUtils.contains(null, "apple");
-        assertTest("contains(null)", false, r3);
-
-        System.out.println();
+    @ParameterizedTest
+    @DisplayName("测试 isEmpty - 参数化测试")
+    @ValueSource(strings = {"X", "Y", "Z"})
+    void testIsEmptyParameterized(String element) {
+        // 这个断言会失败，暴露缺陷
+        assertFalse(ArrayUtils.isEmpty(new String[]{element}),
+                "长度为1的数组[" + element + "]不应该被认为是空的");
     }
 
+    // ========== isNotEmpty 方法测试（依赖isEmpty） ==========
 
+    @Test
+    @DisplayName("测试 isNotEmpty")
+    void testIsNotEmpty() {
+        assertFalse(ArrayUtils.isNotEmpty((Object[]) null), "null应该返回false");
+        assertFalse(ArrayUtils.isNotEmpty(new String[]{}), "空数组应该返回false");
 
-    /**
-     * 断言工具方法
-     */
-    private static void assertTest(String testName, Object expected, Object actual) {
-        totalTests++;
-        boolean isEqual;
+        // 由于依赖isEmpty，这个断言也会失败
+        assertTrue(ArrayUtils.isNotEmpty(new String[]{"A"}), "长度为1的数组应该返回true");
 
-        if (expected == actual) {
-            isEqual = true;
-        } else if (expected != null && expected.equals(actual)) {
-            isEqual = true;
-        } else {
-            isEqual = false;
-        }
-
-        if (isEqual) {
-            System.out.println("✓ " + testName + " 通过");
-            passedTests++;
-        } else {
-            System.err.println("✗ " + testName + " 失败");
-            System.err.println("  期望: " + expected);
-            System.err.println("  实际: " + actual);
-            failedTests++;
-        }
+        assertTrue(ArrayUtils.isNotEmpty(new String[]{"A", "B"}), "长度>=2的数组应该返回true");
     }
 
-    /**
-     * 打印测试总结
-     */
-    private static void printSummary() {
-        System.out.println("\n========== 测试总结 ==========");
-        System.out.println("总测试数: " + totalTests);
-        System.out.println("通过: " + passedTests);
-        System.out.println("失败: " + failedTests);
-        System.out.println("通过率: " + (passedTests * 100.0 / totalTests) + "%");
+    // ========== contains 方法测试（正常方法，无缺陷） ==========
 
-        if (failedTests > 0) {
-            System.err.println("\n⚠️ 发现缺陷：长度为1的数组被错误地认为为空！");
-        }
+    @Test
+    @DisplayName("测试 contains - 正常情况")
+    void testContainsNormal() {
+        String[] fruits = {"apple", "banana", "orange"};
+
+        assertTrue(ArrayUtils.contains(fruits, "banana"), "应该包含banana");
+        assertFalse(ArrayUtils.contains(fruits, "grape"), "不应该包含grape");
+    }
+
+    @Test
+    @DisplayName("测试 contains - null安全")
+    void testContainsNullSafe() {
+        assertFalse(ArrayUtils.contains(null, "anything"), "null数组应该返回false");
+        assertFalse(ArrayUtils.contains(new String[]{}, "anything"), "空数组应该返回false");
+    }
+
+    // ========== add 方法测试（正常方法） ==========
+
+    @Test
+    @DisplayName("测试 add - 向数组添加元素")
+    void testAdd() {
+        String[] original = {"A", "B"};
+        String[] result = ArrayUtils.add(original, "C");
+
+        assertEquals(3, result.length, "添加后长度应为3");
+        assertEquals("C", result[2], "新元素应在最后");
+        assertNotSame(original, result, "应返回新数组，不修改原数组");
+    }
+
+    @Test
+    @DisplayName("测试 add - null数组")
+    void testAddToNull() {
+        String[] result = ArrayUtils.add(null, "A");
+
+        assertEquals(1, result.length, "null数组添加后应返回长度为1的数组");
+        assertEquals("A", result[0]);
+    }
+
+    // ========== reverse 方法测试 ==========
+
+    @Test
+    @DisplayName("测试 reverse - 数组反转")
+    void testReverse() {
+        String[] input = {"A", "B", "C", "D"};
+        ArrayUtils.reverse(input);
+
+        assertArrayEquals(new String[]{"D", "C", "B", "A"}, input, "数组应被反转");
+    }
+
+    @Test
+    @DisplayName("测试 reverse - 空数组和null")
+    void testReverseEdgeCases() {
+        String[] empty = {};
+        ArrayUtils.reverse(empty);
+        assertArrayEquals(new String[]{}, empty, "空数组反转后仍为空");
+
+        assertDoesNotThrow(() -> ArrayUtils.reverse((Object[]) null), "null数组不应抛异常");
+    }
+
+    // ========== subarray 方法测试 ==========
+
+    @Test
+    @DisplayName("测试 subarray - 获取子数组")
+    void testSubarray() {
+        String[] input = {"A", "B", "C", "D", "E"};
+        String[] result = ArrayUtils.subarray(input, 1, 4);
+
+        assertArrayEquals(new String[]{"B", "C", "D"}, result);
     }
 }
